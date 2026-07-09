@@ -19,7 +19,7 @@ const CRITERIA = [
   { id: 'skill',      name: '실력',       max: 30 },
   { id: 'creativity', name: '창의성',     max: 30 }
 ];
-const DEFAULT_TEAMS = ['온새미','인포드','이다희','노루바나','금정유소년타악오케스트라','체리핫식스','통제구역','케이사','디텐','박선우밴드'];
+const DEFAULT_TEAMS = ['온새미','인포드','이다희','노루바나','금정유소년타악오케스트라','체리핫식스','통제구역','퀘이사','디텐','박선우밴드'];
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
 
 // ----- Turso / libSQL client (없으면 로컬 파일로 동작) -----
@@ -45,6 +45,15 @@ async function init() {
   if (r.rows.length === 0) {
     await db.execute({ sql: `INSERT INTO settings(key,value) VALUES('teams',?)`, args: [JSON.stringify(DEFAULT_TEAMS)] });
   }
+  // one-time rename: 케이사 -> 퀘이사 (기존 저장값 자동 교정)
+  try {
+    const tr = await db.execute(`SELECT value FROM settings WHERE key='teams'`);
+    if (tr.rows.length) {
+      const arr = JSON.parse(tr.rows[0].value);
+      const k = arr.indexOf('케이사');
+      if (k >= 0) { arr[k] = '퀘이사'; await db.execute({ sql: `UPDATE settings SET value=? WHERE key='teams'`, args: [JSON.stringify(arr)] }); }
+    }
+  } catch {}
 }
 
 async function getTeams() {
