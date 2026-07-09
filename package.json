@@ -1,0 +1,14 @@
+{
+  "name": "gyeongyeon-judging",
+  "version": "1.0.0",
+  "description": "경연 심사 채점 앱 (Express + Turso/libSQL)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "express": "^4.19.2"
+  }
+}

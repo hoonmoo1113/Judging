@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0c1a">
+<title>경연 심사 채점</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0c1a;--panel:#15173040;--panel2:#0f1126;--card:#161936;--ink:#eef0ff;--muted:#9498c2;--line:#ffffff1a;
+    --gold:#FFD23F;--cyan:#2EC4F1;--green:#4ADE80;--pink:#FF5D8F;--violet:#7B61FF;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{background:
+    radial-gradient(900px 500px at 100% -10%, #2a2170 0%, transparent 55%),
+    radial-gradient(800px 500px at -10% 110%, #1c3a6e 0%, transparent 55%), var(--bg);min-height:100vh}
+  .app{max-width:760px;margin:0 auto;padding:0 14px 90px}
+  .top{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);background:#0b0c1abf;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 4px;margin-bottom:14px}
+  .brand{font-family:"Black Han Sans";font-size:19px;letter-spacing:.3px;
+    background:linear-gradient(92deg,var(--gold),var(--pink) 55%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .rolechip{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .rolechip .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .btn{border:0;cursor:pointer;font-weight:800;font-size:15px;padding:13px 18px;border-radius:14px;color:#08091a;
+    background:linear-gradient(92deg,var(--gold),#ffb347);box-shadow:0 10px 26px -12px var(--gold)}
+  .btn.block{width:100%}
+  .btn.ghost{background:#ffffff10;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn.small{padding:8px 13px;font-size:13px;border-radius:11px}
+  .btn.danger{background:#ff5d6c;color:#fff;box-shadow:none}
+  .lead{color:var(--muted);font-size:13.5px;line-height:1.65;margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 20px 50px -30px #000}
+  h2.sec{font-size:15px;margin:0 0 12px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .rolegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.rolegrid{grid-template-columns:1fr}}
+  .rolecard{position:relative;overflow:hidden;text-align:left;border:1px solid var(--line);background:var(--panel2);
+    border-radius:18px;padding:18px;cursor:pointer;color:var(--ink);transition:transform .12s,border-color .12s}
+  .rolecard:active{transform:scale(.98)}
+  .rolecard b{font-size:18px;display:block}
+  .rolecard span{font-size:12px;color:var(--muted)}
+  .rolecard .bar{position:absolute;left:0;top:0;bottom:0;width:5px}
+  .rolecard.j1 .bar{background:var(--cyan)} .rolecard.j2 .bar{background:var(--green)} .rolecard.j3 .bar{background:var(--pink)}
+  .rolecard.adm .bar{background:var(--gold)}
+  .team{background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+  .team .hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .team .tag{font-family:"Black Han Sans";font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+    border-radius:9px;background:#ffffff12;color:var(--gold)}
+  .team .nm{font-weight:800;font-size:16px;line-height:1.2}
+  .crit{margin:14px 0}
+  .crit .r{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+  .crit .lab{font-weight:600;font-size:14px}
+  .crit .val{font-family:"Black Han Sans";font-size:22px;color:var(--cyan)}
+  .crit .val small{font-size:12px;color:var(--muted);font-family:"Noto Sans KR"}
+  input[type=range]{width:100%;height:34px;accent-color:var(--cyan);cursor:pointer}
+  .tot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+  .tot b{font-family:"Black Han Sans";font-size:24px;color:var(--green)}
+  .pill{font-size:11px;padding:3px 9px;border-radius:20px;background:#ffffff12;color:var(--muted)}
+  .pill.ok{background:#4ade8022;color:var(--green)}
+  .weights{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px}
+  .weights .w{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:6px 12px}
+  .lead-row{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px}
+  .lead-row .rank{font-family:"Black Han Sans";font-size:22px;width:40px;text-align:center;flex:none;color:var(--muted)}
+  .lead-row.r1 .rank{color:var(--gold)} .lead-row.r2 .rank{color:#cfd6e6} .lead-row.r3 .rank{color:#e6a26a}
+  .lead-row.r1{border-color:#FFD23F55;box-shadow:0 0 0 1px #FFD23F33 inset}
+  .lead-row .mid{flex:1;min-width:0}
+  .lead-row .team-nm{font-weight:800;font-size:16px}
+  .lead-row .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .lead-row .fin{font-family:"Black Han Sans";font-size:26px;color:var(--gold);text-align:right;flex:none}
+  .lead-row .fin small{display:block;font-family:"Noto Sans KR";font-size:10px;color:var(--muted);font-weight:400}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-weight:700;font-size:14px;padding:10px;border-radius:12px;cursor:pointer}
+  .tabs button.on{background:linear-gradient(92deg,var(--violet),var(--cyan));color:#fff;border-color:transparent}
+  .adminrow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .adminrow .t{font-family:"Black Han Sans";width:22px;color:var(--muted)}
+  .adminrow input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px 12px;font-size:14px;font-weight:600}
+  .pininput{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:14px;font-size:18px;text-align:center;letter-spacing:6px;margin-bottom:12px}
+  .qr{background:#fff;padding:12px;border-radius:14px;width:170px;height:170px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+  .linkline{word-break:break-all;font-size:12px;color:var(--cyan);background:var(--panel2);padding:9px 11px;border-radius:9px;border:1px solid var(--line);margin-top:10px;text-align:center}
+  .note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
+  .status{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--muted);background:#0f1126cc;border:1px solid var(--line);padding:7px 14px;border-radius:20px;backdrop-filter:blur(8px)}
+  .hidden{display:none}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:20px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">경연 심사 채점</div>
+    <div class="rolechip" id="roleChip"></div>
+  </div>
+
+  <!-- LANDING -->
+  <div id="landing">
+    <p class="lead">본인 역할을 선택하세요. 심사위원은 각 팀을 <b>무대장악력(40)·실력(30)·창의성(30)</b>으로 채점하고, 최종 점수는 <b>음악전문가 40% · 청소년전문가 35% · 청소년음악가 25%</b>로 자동 합산됩니다.</p>
+    <div class="rolegrid" id="roleGrid"></div>
+  </div>
+
+  <!-- JUDGE -->
+  <div id="judge" class="hidden">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn ghost small" onclick="exitRole()">역할 변경</button>
+    </div>
+    <div id="teamCards"></div>
+    <p class="note">슬라이더를 움직이면 자동 저장됩니다. 모든 팀을 채점해 주세요. 다시 접속해도 내 점수가 유지됩니다.</p>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="admin" class="hidden">
+    <div id="pinGate">
+      <div class="card" style="max-width:360px;margin:30px auto">
+        <h2 class="sec">진행자 확인</h2>
+        <p class="note" style="margin:0 0 12px">진행자 PIN을 입력하세요.</p>
+        <input class="pininput" id="pinInput" inputmode="numeric" placeholder="••••">
+        <button class="btn block" onclick="checkPin()">확인</button>
+        <button class="btn ghost block" style="margin-top:8px" onclick="exitRole()">뒤로</button>
+        <p class="note" id="pinErr" style="color:#ff8095"></p>
+      </div>
+    </div>
+
+    <div id="adminMain" class="hidden">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="btn ghost small" onclick="exitRole()">역할 변경</button>
+      </div>
+      <div class="tabs">
+        <button id="tabResult" class="on" onclick="showTab('result')">실시간 순위</button>
+        <button id="tabSetup" onclick="showTab('setup')">설정 · QR</button>
+      </div>
+
+      <div id="paneResult">
+        <div class="weights">
+          <span class="w">음악전문가 <b style="color:var(--cyan)">40%</b></span>
+          <span class="w">청소년전문가 <b style="color:var(--green)">35%</b></span>
+          <span class="w">청소년음악가 <b style="color:var(--pink)">25%</b></span>
+        </div>
+        <div id="board"></div>
+      </div>
+
+      <div id="paneSetup" class="hidden">
+        <div class="card">
+          <h2 class="sec">심사위원 접속 QR</h2>
+          <div class="qr" id="qr"></div>
+          <div class="linkline" id="linkline"></div>
+          <p class="note">심사위원이 이 QR을 폰으로 찍어 접속 → 본인 역할 선택 → 채점하면 이 화면에 실시간 합산됩니다.</p>
+        </div>
+        <div class="card">
+          <h2 class="sec">팀 이름 설정</h2>
+          <div id="adminTeams"></div>
+          <button class="btn small" onclick="saveTeams()">팀 이름 저장</button>
+          <span class="note" id="teamSaved" style="margin-left:8px"></span>
+        </div>
+        <div class="card">
+          <h2 class="sec">점수 초기화</h2>
+          <p class="note" style="margin-top:0">연습 후 실전 시작 전, 모든 점수를 0으로 되돌립니다.</p>
+          <button class="btn danger small" onclick="resetScores()">모든 점수 초기화</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="status" id="status">연결 중…</div>
+
+<script>
+const JUDGES=[{id:'music',name:'음악전문가',weight:.40,color:'var(--cyan)'},
+              {id:'youth',name:'청소년전문가',weight:.35,color:'var(--green)'},
+              {id:'musician',name:'청소년음악가',weight:.25,color:'var(--pink)'}];
+const CRITERIA=[{id:'stage',name:'무대장악력',max:40},{id:'skill',name:'실력',max:30},{id:'creativity',name:'창의성',max:30}];
+let teams=[], scores=[], role=localStorage.getItem('role')||null, adminPin=localStorage.getItem('adminPin')||'', saveTimers={};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+async function api(path,body){const o={headers:{'Content-Type':'application/json'}};if(body){o.method='POST';o.body=JSON.stringify(body);}const r=await fetch(path,o);return r.json();}
+function setStatus(t,ok){const s=$('status');s.textContent=t;s.style.color=ok?'var(--green)':'var(--muted)';}
+
+function scoreOf(judge,idx){return scores.find(s=>s.judge===judge&&s.team_idx===idx);}
+function judgeTotal(judge,idx){const s=scoreOf(judge,idx);return s?(+s.stage+ +s.skill+ +s.creativity):null;}
+function finalOf(idx){let f=0;JUDGES.forEach(j=>{const t=judgeTotal(j.id,idx);if(t!=null)f+=t*j.weight;});return f;}
+function doneOf(idx){let n=0;JUDGES.forEach(j=>{if(judgeTotal(j.id,idx)!=null)n++;});return n;}
+
+// ---------- landing ----------
+function renderRoles(){
+  const g=$('roleGrid');g.innerHTML='';
+  JUDGES.forEach((j,i)=>{const b=document.createElement('button');b.className='rolecard j'+(i+1);
+    b.innerHTML='<span class="bar"></span><b>'+j.name+'</b><span>점수 반영 '+Math.round(j.weight*100)+'% · 채점하기</span>';
+    b.onclick=()=>enterRole(j.id);g.appendChild(b);});
+  const a=document.createElement('button');a.className='rolecard adm';
+  a.innerHTML='<span class="bar"></span><b>진행자</b><span>실시간 순위 · 설정 · QR (PIN 필요)</span>';
+  a.onclick=()=>enterRole('admin');g.appendChild(a);
+}
+function enterRole(r){role=r;localStorage.setItem('role',r);showView();}
+function exitRole(){role=null;localStorage.removeItem('role');showView();}
+window.exitRole=exitRole;
+
+function showView(){
+  $('landing').classList.toggle('hidden',role!==null);
+  $('judge').classList.toggle('hidden',!(role&&role!=='admin'));
+  $('admin').classList.toggle('hidden',role!=='admin');
+  const chip=$('roleChip');
+  if(role&&role!=='admin'){const j=JUDGES.find(x=>x.id===role);chip.innerHTML='<span class="dot"></span>'+j.name+' · '+Math.round(j.weight*100)+'%';renderJudge();}
+  else if(role==='admin'){chip.innerHTML='<span class="dot"></span>진행자';enterAdmin();}
+  else chip.innerHTML='';
+}
+
+// ---------- judge ----------
+function renderJudge(){
+  const wrap=$('teamCards');wrap.innerHTML='';
+  teams.forEach((nm,idx)=>{
+    const s=scoreOf(role,idx)||{stage:0,skill:0,creativity:0};
+    let crit='';
+    CRITERIA.forEach(c=>{crit+=
+      '<div class="crit"><div class="r"><span class="lab">'+c.name+'</span>'+
+      '<span class="val"><span id="v-'+idx+'-'+c.id+'">'+(s[c.id]||0)+'</span><small> / '+c.max+'</small></span></div>'+
+      '<input type="range" min="0" max="'+c.max+'" value="'+(s[c.id]||0)+'" oninput="onScore('+idx+',\''+c.id+'\',this.value)"></div>';});
+    const tot=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
+    const d=document.createElement('div');d.className='team';
+    d.innerHTML='<div class="hd"><span class="tag">'+String.fromCharCode(65+idx)+'</span><span class="nm">'+esc(nm)+'</span></div>'+crit+
+      '<div class="tot"><span class="pill" id="sv-'+idx+'">'+(scoreOf(role,idx)?'저장됨':'미채점')+'</span><span><b id="tot-'+idx+'">'+tot+'</b><small style="color:var(--muted)"> / 100</small></span></div>';
+    wrap.appendChild(d);
+  });
+}
+function onScore(idx,cid,val){
+  let s=scoreOf(role,idx);if(!s){s={judge:role,team_idx:idx,stage:0,skill:0,creativity:0};scores.push(s);}
+  s[cid]=+val;
+  $('v-'+idx+'-'+cid).textContent=val;
+  $('tot-'+idx).textContent=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
+  const sv=$('sv-'+idx);sv.textContent='저장 중…';sv.className='pill';
+  clearTimeout(saveTimers[idx]);
+  saveTimers[idx]=setTimeout(async()=>{
+    try{await api('/api/score',{judge:role,teamIdx:idx,stage:s.stage,skill:s.skill,creativity:s.creativity});
+      sv.textContent='● 저장됨';sv.className='pill ok';}
+    catch(e){sv.textContent='저장 실패(재시도)';}
+  },350);
+}
+window.onScore=onScore;
+
+// ---------- admin ----------
+function enterAdmin(){
+  if(adminPin){$('pinGate').classList.add('hidden');$('adminMain').classList.remove('hidden');renderAdmin();}
+  else{$('pinGate').classList.remove('hidden');$('adminMain').classList.add('hidden');}
+}
+async function checkPin(){
+  const pin=$('pinInput').value.trim();
+  const r=await api('/api/admin/check',{pin});
+  if(r.ok){adminPin=pin;localStorage.setItem('adminPin',pin);$('pinErr').textContent='';enterAdmin();}
+  else{$('pinErr').textContent='PIN이 올바르지 않습니다.';}
+}
+window.checkPin=checkPin;
+function showTab(t){
+  $('tabResult').classList.toggle('on',t==='result');$('tabSetup').classList.toggle('on',t==='setup');
+  $('paneResult').classList.toggle('hidden',t!=='result');$('paneSetup').classList.toggle('hidden',t!=='setup');
+  if(t==='setup'){renderAdminTeams();renderQR();}
+}
+window.showTab=showTab;
+function renderAdmin(){renderBoard();}
+function renderBoard(){
+  const rows=teams.map((nm,idx)=>({idx,nm,fin:finalOf(idx),done:doneOf(idx)}));
+  const order=rows.slice().sort((a,b)=>b.fin-a.fin);
+  let rk=0,prev=null;const rankOf={};
+  order.forEach((r,i)=>{if(prev===null||r.fin<prev-1e-9){rk=i+1;prev=r.fin;}rankOf[r.idx]=r.done>0?rk:'-';});
+  const b=$('board');
+  if(!scores.length){b.innerHTML='<div class="empty">아직 제출된 점수가 없습니다. 심사위원이 채점하면 여기에 실시간으로 표시됩니다.</div>';return;}
+  b.innerHTML=order.map(r=>{
+    const rank=rankOf[r.idx];
+    const sub=JUDGES.map(j=>{const t=judgeTotal(j.id,r.idx);return j.name.replace('전문가','').replace('음악가','음악가')+' '+(t==null?'–':t);}).join(' · ');
+    return '<div class="lead-row r'+(rank===1?1:rank===2?2:rank===3?3:0)+'">'+
+      '<div class="rank">'+rank+'</div>'+
+      '<div class="mid"><div class="team-nm">'+String.fromCharCode(65+r.idx)+'. '+esc(r.nm)+'</div>'+
+      '<div class="sub">'+sub+' · <span style="color:'+(r.done===3?'var(--green)':'var(--muted)')+'">'+r.done+'/3</span></div></div>'+
+      '<div class="fin">'+(r.done>0?r.fin.toFixed(1):'–')+'<small>최종/100</small></div></div>';
+  }).join('');
+}
+function renderAdminTeams(){
+  const at=$('adminTeams');at.innerHTML='';
+  teams.forEach((nm,i)=>{const r=document.createElement('div');r.className='adminrow';
+    r.innerHTML='<span class="t">'+String.fromCharCode(65+i)+'</span><input value="'+esc(nm).replace(/"/g,'&quot;')+'" data-i="'+i+'">';
+    at.appendChild(r);});
+}
+async function saveTeams(){
+  const arr=[...document.querySelectorAll('#adminTeams input')].map((inp,i)=>inp.value.trim()||('팀 '+(i+1)));
+  const r=await api('/api/teams',{pin:adminPin,teams:arr});
+  if(r.ok){teams=arr;$('teamSaved').textContent='저장됨 ✓';renderBoard();setTimeout(()=>$('teamSaved').textContent='',1500);}
+  else $('teamSaved').textContent='실패';
+}
+window.saveTeams=saveTeams;
+async function resetScores(){
+  if(!confirm('모든 심사위원의 점수를 초기화할까요? 되돌릴 수 없습니다.'))return;
+  const r=await api('/api/reset',{pin:adminPin});
+  if(r.ok){scores=[];renderBoard();alert('초기화되었습니다.');}
+}
+window.resetScores=resetScores;
+function renderQR(){
+  const url=location.origin;$('linkline').textContent=url;
+  const box=$('qr');box.innerHTML='';
+  try{if(window.QRCode){new QRCode(box,{text:url,width:146,height:146,correctLevel:QRCode.CorrectLevel.M});}
+    else box.innerHTML='<span style="color:#555;font-size:12px">QR 로드 실패</span>';}
+  catch(e){box.innerHTML='<span style="color:#555;font-size:12px">QR 실패</span>';}
+}
+
+// ---------- live poll ----------
+async function poll(){
+  try{
+    const st=await api('/api/state');
+    const teamsChanged=JSON.stringify(teams)!==JSON.stringify(st.teams);
+    teams=st.teams;
+    if(role&&role!=='admin'){
+      // keep this judge's in-progress edits; merge others
+      const mine=scores.filter(s=>s.judge===role);
+      scores=st.scores;
+      mine.forEach(m=>{const i=scores.findIndex(s=>s.judge===role&&s.team_idx===m.team_idx);if(i>=0)scores[i]=m;else scores.push(m);});
+      if(teamsChanged)renderJudge();
+    }else{
+      scores=st.scores;
+      if(role==='admin'&&adminPin){renderBoard();if(teamsChanged&&!$('paneSetup').classList.contains('hidden'))renderAdminTeams();}
+    }
+    setStatus('실시간 연결됨 · '+scores.length+'건',true);
+  }catch(e){setStatus('연결 재시도 중…',false);}
+}
+
+// ---------- boot ----------
+renderRoles();
+(async()=>{ await poll(); showView(); setInterval(poll,1500); })();
+</script>
+</body>
+</html>
