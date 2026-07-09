@@ -80,7 +80,13 @@
   .crit .lab{font-weight:700;font-size:14px}
   .crit .val{font-family:"Black Han Sans";font-size:22px;color:var(--cyan)}
   .crit .val small{font-size:12px;color:var(--muted);font-family:"Noto Sans KR"}
-  input[type=range]{width:100%;height:34px;accent-color:var(--violet);cursor:pointer}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:46px;background:transparent;cursor:pointer;margin:4px 0}
+  input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:8px;background:linear-gradient(90deg,var(--violet) var(--p,0%),#e3e1f2 var(--p,0%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:34px;height:34px;border-radius:50%;background:var(--violet);border:4px solid #fff;box-shadow:0 3px 10px #5b45e055;margin-top:-11px}
+  input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+  input[type=range]::-moz-range-track{height:12px;border-radius:8px;background:#e3e1f2}
+  input[type=range]::-moz-range-progress{height:12px;border-radius:8px;background:var(--violet)}
+  input[type=range]::-moz-range-thumb{width:34px;height:34px;border:4px solid #fff;border-radius:50%;background:var(--violet);box-shadow:0 3px 10px #5b45e055}
   .tot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line2);padding-top:12px;margin-top:6px}
   .tot b{font-family:"Black Han Sans";font-size:24px;color:var(--green)}
   .pill{font-size:11px;padding:3px 9px;border-radius:20px;background:#eceef4;color:var(--muted)}
@@ -222,9 +228,9 @@
 <div class="status" id="status">연결 중…</div>
 
 <script>
-const JUDGES=[{id:'music',name:'음악전문가',weight:.40,color:'var(--cyan)'},
-              {id:'youth',name:'청소년전문가',weight:.35,color:'var(--green)'},
-              {id:'musician',name:'청소년음악가',weight:.25,color:'var(--pink)'}];
+const JUDGES=[{id:'music',name:'음악전문가',person:'정한영',weight:.40,color:'var(--cyan)'},
+              {id:'youth',name:'청소년전문가',person:'김경진',weight:.35,color:'var(--green)'},
+              {id:'musician',name:'청소년음악가',person:'정지훈',weight:.25,color:'var(--pink)'}];
 const CRITERIA=[{id:'stage',name:'무대장악력',max:40},{id:'skill',name:'실력',max:30},{id:'creativity',name:'창의성',max:30}];
 let teams=[], scores=[], role=localStorage.getItem('role')||null, adminPin=localStorage.getItem('adminPin')||'', saveTimers={}, currentTeam=null;
 
@@ -242,7 +248,7 @@ function doneOf(idx){let n=0;JUDGES.forEach(j=>{if(judgeTotal(j.id,idx)!=null)n+
 function renderRoles(){
   const g=$('roleGrid');g.innerHTML='';
   JUDGES.forEach((j,i)=>{const b=document.createElement('button');b.className='rolecard j'+(i+1);
-    b.innerHTML='<span class="bar"></span><b>'+j.name+'</b><span>점수 반영 '+Math.round(j.weight*100)+'% · 채점하기</span>';
+    b.innerHTML='<span class="bar"></span><b>'+j.name+' · '+j.person+'</b><span>점수 반영 '+Math.round(j.weight*100)+'% · 이 역할로 채점</span>';
     b.onclick=()=>enterRole(j.id);g.appendChild(b);});
   const a=document.createElement('button');a.className='rolecard adm';
   a.innerHTML='<span class="bar"></span><b>진행자</b><span>실시간 순위 · 설정 · QR (PIN 필요)</span>';
@@ -257,7 +263,7 @@ function showView(){
   $('judge').classList.toggle('hidden',!(role&&role!=='admin'));
   $('admin').classList.toggle('hidden',role!=='admin');
   const chip=$('roleChip');
-  if(role&&role!=='admin'){const j=JUDGES.find(x=>x.id===role);chip.innerHTML='<span class="dot"></span>'+j.name+' · '+Math.round(j.weight*100)+'%';renderJudge();}
+  if(role&&role!=='admin'){const j=JUDGES.find(x=>x.id===role);chip.innerHTML='<span class="dot"></span>'+j.name+' '+j.person;renderJudge();}
   else if(role==='admin'){chip.innerHTML='<span class="dot"></span>진행자';enterAdmin();}
   else chip.innerHTML='';
 }
@@ -267,14 +273,14 @@ function renderJudge(){ currentTeam=null; renderTeamList(); }
 function renderTeamList(){
   $('judgeList').classList.remove('hidden'); $('judgeScore').classList.add('hidden');
   const j=JUDGES.find(x=>x.id===role);
-  $('judgeWho2').innerHTML='<span class="dot"></span>'+j.name+' · 반영 '+Math.round(j.weight*100)+'%';
+  $('judgeWho2').innerHTML='<span class="dot"></span>'+j.name+' '+j.person+' · 반영 '+Math.round(j.weight*100)+'%';
   const done=teams.filter((_,i)=>scoreOf(role,i)).length;
   $('judgeProgress').innerHTML='채점 진행 <b style="color:var(--gold)">'+done+'</b> / '+teams.length+'팀';
   const wrap=$('teamList');wrap.innerHTML='';
   teams.forEach((nm,idx)=>{
     const s=scoreOf(role,idx), tot=s?(+s.stage+ +s.skill+ +s.creativity):null;
     const b=document.createElement('button');b.className='teambtn'+(s?' scored':'');
-    b.innerHTML='<span class="tag">'+String.fromCharCode(65+idx)+'</span><span class="tnm">'+esc(nm)+'</span>'+
+    b.innerHTML='<span class="tnm">'+esc(nm)+'</span>'+
       (s?'<span class="tstat done">채점됨 '+tot+'점 · 수정 ›</span>':'<span class="tstat">채점하기 ›</span>');
     b.onclick=()=>openTeam(idx);
     wrap.appendChild(b);
@@ -285,12 +291,12 @@ function openTeam(idx){
   $('judgeList').classList.add('hidden'); $('judgeScore').classList.remove('hidden');
   const s=scoreOf(role,idx)||{stage:0,skill:0,creativity:0};
   let crit='';
-  CRITERIA.forEach(c=>{crit+=
+  CRITERIA.forEach(c=>{const p0=((s[c.id]||0)/c.max*100);crit+=
     '<div class="crit"><div class="r"><span class="lab">'+c.name+'</span>'+
     '<span class="val"><span id="v-cur-'+c.id+'">'+(s[c.id]||0)+'</span><small> / '+c.max+'</small></span></div>'+
-    '<input type="range" min="0" max="'+c.max+'" value="'+(s[c.id]||0)+'" oninput="onScoreCur(\''+c.id+'\',this.value)"></div>';});
+    '<input type="range" min="0" max="'+c.max+'" value="'+(s[c.id]||0)+'" style="--p:'+p0+'%" oninput="onScoreCur(\''+c.id+'\',this)"></div>';});
   const tot=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
-  $('scoreCard').innerHTML='<div class="team"><div class="hd"><span class="tag">'+String.fromCharCode(65+idx)+'</span><span class="nm">'+esc(teams[idx])+'</span></div>'+crit+
+  $('scoreCard').innerHTML='<div class="team"><div class="hd"><span class="nm">'+esc(teams[idx])+'</span></div>'+crit+
     '<div class="tot"><span style="font-size:12px;color:var(--muted)">팀 점수</span><span><b id="tot-cur">'+tot+'</b><small style="color:var(--muted)"> / 100</small></span></div></div>'+
     '<button class="btn block" onclick="backToList()">완료 · 팀 목록으로</button>';
   const has=!!scoreOf(role,idx);
@@ -298,10 +304,12 @@ function openTeam(idx){
   window.scrollTo(0,0);
 }
 function backToList(){ currentTeam=null; renderTeamList(); window.scrollTo(0,0); }
-function onScoreCur(cid,val){
+function onScoreCur(cid,el){
+  const val=+el.value, c=CRITERIA.find(x=>x.id===cid);
+  el.style.setProperty('--p',(val/c.max*100)+'%');
   const idx=currentTeam; let s=scoreOf(role,idx);
   if(!s){s={judge:role,team_idx:idx,stage:0,skill:0,creativity:0};scores.push(s);}
-  s[cid]=+val;
+  s[cid]=val;
   $('v-cur-'+cid).textContent=val;
   $('tot-cur').textContent=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
   const sv=$('scoreSaved');sv.textContent='저장 중…';sv.className='pill';
@@ -345,7 +353,7 @@ function renderBoard(){
     const sub=JUDGES.map(j=>{const t=judgeTotal(j.id,r.idx);return j.name.replace('전문가','').replace('음악가','음악가')+' '+(t==null?'–':t);}).join(' · ');
     return '<div class="lead-row r'+(rank===1?1:rank===2?2:rank===3?3:0)+'">'+
       '<div class="rank">'+rank+'</div>'+
-      '<div class="mid"><div class="team-nm">'+String.fromCharCode(65+r.idx)+'. '+esc(r.nm)+'</div>'+
+      '<div class="mid"><div class="team-nm">'+esc(r.nm)+'</div>'+
       '<div class="sub">'+sub+' · <span style="color:'+(r.done===3?'var(--green)':'var(--muted)')+'">'+r.done+'/3</span></div></div>'+
       '<div class="fin">'+(r.done>0?r.fin.toFixed(1):'–')+'<small>최종/100</small></div></div>';
   }).join('');
@@ -353,7 +361,7 @@ function renderBoard(){
 function renderAdminTeams(){
   const at=$('adminTeams');at.innerHTML='';
   teams.forEach((nm,i)=>{const r=document.createElement('div');r.className='adminrow';
-    r.innerHTML='<span class="t">'+String.fromCharCode(65+i)+'</span><input value="'+esc(nm).replace(/"/g,'&quot;')+'" data-i="'+i+'">';
+    r.innerHTML='<span class="t">'+(i+1)+'</span><input value="'+esc(nm).replace(/"/g,'&quot;')+'" data-i="'+i+'">';
     at.appendChild(r);});
 }
 async function saveTeams(){
