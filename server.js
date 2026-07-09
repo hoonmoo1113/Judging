@@ -81,11 +81,30 @@ app.post('/api/score', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-app.post('/api/admin/check', (req, res) => res.json({ ok: (req.body?.pin) === ADMIN_PIN }));
+async function getPin() {
+  try {
+    const r = await db.execute(`SELECT value FROM settings WHERE key='admin_pin'`);
+    if (r.rows.length && r.rows[0].value) return r.rows[0].value;
+  } catch {}
+  return ADMIN_PIN;
+}
+
+app.post('/api/admin/check', async (req, res) => res.json({ ok: (req.body?.pin) === await getPin() }));
+
+app.post('/api/admin/pin', async (req, res) => {
+  try {
+    if ((req.body?.pin) !== await getPin()) return res.status(403).json({ error: 'pin' });
+    const np = String(req.body?.newPin || '').trim();
+    if (np.length < 4 || np.length > 20) return res.status(400).json({ error: 'length' });
+    await db.execute({ sql: `INSERT INTO settings(key,value) VALUES('admin_pin',?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value`, args: [np] });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
 
 app.post('/api/teams', async (req, res) => {
   try {
-    if ((req.body?.pin) !== ADMIN_PIN) return res.status(403).json({ error: 'pin' });
+    if ((req.body?.pin) !== await getPin()) return res.status(403).json({ error: 'pin' });
     const teams = req.body.teams;
     if (!Array.isArray(teams) || !teams.length) return res.status(400).json({ error: 'bad teams' });
     await db.execute({ sql: `INSERT INTO settings(key,value) VALUES('teams',?)
@@ -96,7 +115,7 @@ app.post('/api/teams', async (req, res) => {
 
 app.post('/api/reset', async (req, res) => {
   try {
-    if ((req.body?.pin) !== ADMIN_PIN) return res.status(403).json({ error: 'pin' });
+    if ((req.body?.pin) !== await getPin()) return res.status(403).json({ error: 'pin' });
     await db.execute(`DELETE FROM scores`);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
