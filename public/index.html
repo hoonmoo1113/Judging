@@ -42,6 +42,16 @@
   .rolecard .bar{position:absolute;left:0;top:0;bottom:0;width:5px}
   .rolecard.j1 .bar{background:var(--cyan)} .rolecard.j2 .bar{background:var(--green)} .rolecard.j3 .bar{background:var(--pink)}
   .rolecard.adm .bar{background:var(--gold)}
+  .who2{font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .who2 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .teambtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);
+    border-radius:16px;padding:15px;margin-bottom:10px;cursor:pointer;color:var(--ink);transition:transform .1s,border-color .1s}
+  .teambtn:active{transform:scale(.99)}
+  .teambtn.scored{border-color:#4ade8055}
+  .teambtn .tag{font-family:"Black Han Sans";font-size:15px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#ffffff12;color:var(--gold);flex:none}
+  .teambtn .tnm{flex:1;min-width:0;font-weight:800;font-size:16px}
+  .teambtn .tstat{font-size:12px;color:var(--muted);flex:none}
+  .teambtn .tstat.done{color:var(--green);font-weight:700}
   .team{background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
   .team .hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .team .tag{font-family:"Black Han Sans";font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;
@@ -98,11 +108,24 @@
 
   <!-- JUDGE -->
   <div id="judge" class="hidden">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-      <button class="btn ghost small" onclick="exitRole()">역할 변경</button>
+    <!-- 팀 목록 -->
+    <div id="judgeList">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="who2" id="judgeWho2"></div>
+        <button class="btn ghost small" onclick="exitRole()">역할 변경</button>
+      </div>
+      <p class="lead" id="judgeProgress" style="margin-bottom:14px"></p>
+      <div id="teamList"></div>
+      <p class="note">팀을 눌러 채점하세요. 이미 채점한 팀도 다시 눌러 언제든 수정할 수 있습니다. 다시 접속해도 내 점수는 유지됩니다.</p>
     </div>
-    <div id="teamCards"></div>
-    <p class="note">슬라이더를 움직이면 자동 저장됩니다. 모든 팀을 채점해 주세요. 다시 접속해도 내 점수가 유지됩니다.</p>
+    <!-- 개별 팀 채점 -->
+    <div id="judgeScore" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <button class="btn ghost small" onclick="backToList()">← 팀 목록</button>
+        <span class="pill" id="scoreSaved"></span>
+      </div>
+      <div id="scoreCard"></div>
+    </div>
   </div>
 
   <!-- ADMIN -->
@@ -165,7 +188,7 @@ const JUDGES=[{id:'music',name:'음악전문가',weight:.40,color:'var(--cyan)'}
               {id:'youth',name:'청소년전문가',weight:.35,color:'var(--green)'},
               {id:'musician',name:'청소년음악가',weight:.25,color:'var(--pink)'}];
 const CRITERIA=[{id:'stage',name:'무대장악력',max:40},{id:'skill',name:'실력',max:30},{id:'creativity',name:'창의성',max:30}];
-let teams=[], scores=[], role=localStorage.getItem('role')||null, adminPin=localStorage.getItem('adminPin')||'', saveTimers={};
+let teams=[], scores=[], role=localStorage.getItem('role')||null, adminPin=localStorage.getItem('adminPin')||'', saveTimers={}, currentTeam=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -202,36 +225,56 @@ function showView(){
 }
 
 // ---------- judge ----------
-function renderJudge(){
-  const wrap=$('teamCards');wrap.innerHTML='';
+function renderJudge(){ currentTeam=null; renderTeamList(); }
+function renderTeamList(){
+  $('judgeList').classList.remove('hidden'); $('judgeScore').classList.add('hidden');
+  const j=JUDGES.find(x=>x.id===role);
+  $('judgeWho2').innerHTML='<span class="dot"></span>'+j.name+' · 반영 '+Math.round(j.weight*100)+'%';
+  const done=teams.filter((_,i)=>scoreOf(role,i)).length;
+  $('judgeProgress').innerHTML='채점 진행 <b style="color:var(--gold)">'+done+'</b> / '+teams.length+'팀';
+  const wrap=$('teamList');wrap.innerHTML='';
   teams.forEach((nm,idx)=>{
-    const s=scoreOf(role,idx)||{stage:0,skill:0,creativity:0};
-    let crit='';
-    CRITERIA.forEach(c=>{crit+=
-      '<div class="crit"><div class="r"><span class="lab">'+c.name+'</span>'+
-      '<span class="val"><span id="v-'+idx+'-'+c.id+'">'+(s[c.id]||0)+'</span><small> / '+c.max+'</small></span></div>'+
-      '<input type="range" min="0" max="'+c.max+'" value="'+(s[c.id]||0)+'" oninput="onScore('+idx+',\''+c.id+'\',this.value)"></div>';});
-    const tot=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
-    const d=document.createElement('div');d.className='team';
-    d.innerHTML='<div class="hd"><span class="tag">'+String.fromCharCode(65+idx)+'</span><span class="nm">'+esc(nm)+'</span></div>'+crit+
-      '<div class="tot"><span class="pill" id="sv-'+idx+'">'+(scoreOf(role,idx)?'저장됨':'미채점')+'</span><span><b id="tot-'+idx+'">'+tot+'</b><small style="color:var(--muted)"> / 100</small></span></div>';
-    wrap.appendChild(d);
+    const s=scoreOf(role,idx), tot=s?(+s.stage+ +s.skill+ +s.creativity):null;
+    const b=document.createElement('button');b.className='teambtn'+(s?' scored':'');
+    b.innerHTML='<span class="tag">'+String.fromCharCode(65+idx)+'</span><span class="tnm">'+esc(nm)+'</span>'+
+      (s?'<span class="tstat done">채점됨 '+tot+'점 · 수정 ›</span>':'<span class="tstat">채점하기 ›</span>');
+    b.onclick=()=>openTeam(idx);
+    wrap.appendChild(b);
   });
 }
-function onScore(idx,cid,val){
-  let s=scoreOf(role,idx);if(!s){s={judge:role,team_idx:idx,stage:0,skill:0,creativity:0};scores.push(s);}
+function openTeam(idx){
+  currentTeam=idx;
+  $('judgeList').classList.add('hidden'); $('judgeScore').classList.remove('hidden');
+  const s=scoreOf(role,idx)||{stage:0,skill:0,creativity:0};
+  let crit='';
+  CRITERIA.forEach(c=>{crit+=
+    '<div class="crit"><div class="r"><span class="lab">'+c.name+'</span>'+
+    '<span class="val"><span id="v-cur-'+c.id+'">'+(s[c.id]||0)+'</span><small> / '+c.max+'</small></span></div>'+
+    '<input type="range" min="0" max="'+c.max+'" value="'+(s[c.id]||0)+'" oninput="onScoreCur(\''+c.id+'\',this.value)"></div>';});
+  const tot=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
+  $('scoreCard').innerHTML='<div class="team"><div class="hd"><span class="tag">'+String.fromCharCode(65+idx)+'</span><span class="nm">'+esc(teams[idx])+'</span></div>'+crit+
+    '<div class="tot"><span style="font-size:12px;color:var(--muted)">팀 점수</span><span><b id="tot-cur">'+tot+'</b><small style="color:var(--muted)"> / 100</small></span></div></div>'+
+    '<button class="btn block" onclick="backToList()">완료 · 팀 목록으로</button>';
+  const has=!!scoreOf(role,idx);
+  const sv=$('scoreSaved');sv.textContent=has?'● 저장됨':'미채점';sv.className='pill'+(has?' ok':'');
+  window.scrollTo(0,0);
+}
+function backToList(){ currentTeam=null; renderTeamList(); window.scrollTo(0,0); }
+function onScoreCur(cid,val){
+  const idx=currentTeam; let s=scoreOf(role,idx);
+  if(!s){s={judge:role,team_idx:idx,stage:0,skill:0,creativity:0};scores.push(s);}
   s[cid]=+val;
-  $('v-'+idx+'-'+cid).textContent=val;
-  $('tot-'+idx).textContent=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
-  const sv=$('sv-'+idx);sv.textContent='저장 중…';sv.className='pill';
-  clearTimeout(saveTimers[idx]);
-  saveTimers[idx]=setTimeout(async()=>{
+  $('v-cur-'+cid).textContent=val;
+  $('tot-cur').textContent=(+s.stage||0)+(+s.skill||0)+(+s.creativity||0);
+  const sv=$('scoreSaved');sv.textContent='저장 중…';sv.className='pill';
+  clearTimeout(saveTimers.cur);
+  saveTimers.cur=setTimeout(async()=>{
     try{await api('/api/score',{judge:role,teamIdx:idx,stage:s.stage,skill:s.skill,creativity:s.creativity});
       sv.textContent='● 저장됨';sv.className='pill ok';}
     catch(e){sv.textContent='저장 실패(재시도)';}
   },350);
 }
-window.onScore=onScore;
+window.openTeam=openTeam; window.backToList=backToList; window.onScoreCur=onScoreCur;
 
 // ---------- admin ----------
 function enterAdmin(){
@@ -307,7 +350,7 @@ async function poll(){
       const mine=scores.filter(s=>s.judge===role);
       scores=st.scores;
       mine.forEach(m=>{const i=scores.findIndex(s=>s.judge===role&&s.team_idx===m.team_idx);if(i>=0)scores[i]=m;else scores.push(m);});
-      if(teamsChanged)renderJudge();
+      if(currentTeam===null) renderTeamList();
     }else{
       scores=st.scores;
       if(role==='admin'&&adminPin){renderBoard();if(teamsChanged&&!$('paneSetup').classList.contains('hidden'))renderAdminTeams();}
