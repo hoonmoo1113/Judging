@@ -359,10 +359,10 @@ function renderBoard(){
     const rank=rankOf[r.idx];
     const sub=JUDGES.map(j=>{const t=judgeTotal(j.id,r.idx);return j.name.replace('전문가','').replace('음악가','음악가')+' '+(t==null?'–':t);}).join(' · ');
     return '<div class="lead-row r'+(rank===1?1:rank===2?2:rank===3?3:0)+'">'+
-      '<div class="rank">'+rank+'</div>'+
+      '<div class="rank">'+(rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank)+'</div>'+
       '<div class="mid"><div class="team-nm">'+esc(r.nm)+'</div>'+
       '<div class="sub">'+sub+' · <span style="color:'+(r.done===3?'var(--green)':'var(--muted)')+'">'+r.done+'/3</span></div></div>'+
-      '<div class="fin">'+(r.done>0?r.fin.toFixed(1):'–')+'<small>최종/100</small></div></div>';
+      '<div class="fin">'+(r.done>0?r.fin.toFixed(2):'–')+'<small>최종/100</small></div></div>';
   }).join('');
 }
 function renderAdminTeams(){
